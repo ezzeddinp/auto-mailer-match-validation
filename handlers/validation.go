@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mode-serius/config"
 	"net/http"
 	"os"
-	"path/filepath" // Ganti path jadi path/filepath
+	"path/filepath"
 	"strings"
 
 	"github.com/xuri/excelize/v2"
@@ -29,19 +30,36 @@ func readExcelFile(path string) (map[string]string, error) {
 	data := make(map[string]string)
 	seenEmails := make(map[string]bool)
 
-	for i := 1; i < len(rows); i++ {
-		if len(rows[i]) < 2 {
-			return nil, errors.New("baris tidak valid di file Excel: " + strings.Join(rows[i], ", "))
+	for _, row := range rows {
+		// skip baris yg kosong
+		if len(row) == 0 {
+			continue
 		}
-		name := rows[i][0]
-		email := strings.ToLower(rows[i][1])
 
-		if _, ok := seenEmails[email]; ok {
-			return nil, errors.New("email duplikat di file Excel: " + email)
+		// cari pasangan nama-email di baris mana saja
+		for i := 0; i < len(row)-1; i++ {
+			name := strings.TrimSpace(row[i])
+			email := strings.TrimSpace(row[i+1])
+
+			// memastikan nama n email tidak kosong
+			if name != "" && email != "" {
+				email = strings.ToLower(email)
+				if _, ok := seenEmails[email]; ok {
+					log.Printf("Email duplikat diabaikan: %s", email)
+					continue
+				}
+				seenEmails[email] = true
+				data[email] = name
+				log.Printf("Found pair: %s -> %s", email, name)
+			}
 		}
-		seenEmails[email] = true
-		data[email] = name
 	}
+
+	// klo gaada data valid sama sekali maka
+	if len(data) == 0 {
+		return nil, errors.New("tidak ada pasangan nama-email yang valid di file Excel")
+	}
+
 	return data, nil
 }
 
@@ -55,7 +73,7 @@ func readZipFile(path string) ([]string, error) {
 	var pdfNames []string
 	for _, file := range zipReader.File {
 		if strings.HasSuffix(file.Name, ".pdf") {
-			pdfNames = append(pdfNames, filepath.Base(file.Name)) // Ganti path.Base jadi filepath.Base
+			pdfNames = append(pdfNames, filepath.Base(file.Name))
 		}
 	}
 	return pdfNames, nil
