@@ -9,7 +9,7 @@ import (
 	"mode-serius/config"
 	"net/http"
 	"os"
-	"path/filepath" // Ganti path jadi path/filepath
+	"path/filepath" 
 	"strings"
 
 	"github.com/xuri/excelize/v2"
@@ -55,7 +55,7 @@ func readZipFile(path string) ([]string, error) {
 	var pdfNames []string
 	for _, file := range zipReader.File {
 		if strings.HasSuffix(file.Name, ".pdf") {
-			pdfNames = append(pdfNames, filepath.Base(file.Name)) // Ganti path.Base jadi filepath.Base
+			pdfNames = append(pdfNames, filepath.Base(file.Name))
 		}
 	}
 	return pdfNames, nil
